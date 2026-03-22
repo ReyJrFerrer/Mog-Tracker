@@ -1,0 +1,5 @@
+{
+  "name": "FlexBoard",
+  "description": "A customizable Trello-style Kanban board with habit tracking and quick-add sidebar.",
+  "requestFramePermissions": []
+}
