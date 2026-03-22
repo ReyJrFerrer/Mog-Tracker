@@ -17,11 +17,19 @@ export default function App() {
     ];
   });
 
+  const [projectTitle, setProjectTitle] = useState(() => {
+    return localStorage.getItem(STORAGE_KEY + '_project_title') || 'Home';
+  });
+
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY + '_todos', JSON.stringify(todos));
   }, [todos]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY + '_project_title', projectTitle);
+  }, [projectTitle]);
 
   const handleAddTodo = (title: string, priority: Priority) => {
     const newTodo: Card = {
@@ -42,6 +50,10 @@ export default function App() {
     setTodos(prev => prev.filter(t => t.id !== id));
   };
 
+  const handleRenameTodo = (id: string, title: string) => {
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, title } : t));
+  };
+
   const handleCardUpdate = (updatedCard: Card) => {
     setTodos(prev => prev.map(t => t.id === updatedCard.id ? updatedCard : t));
     setSelectedCard(updatedCard);
@@ -51,9 +63,12 @@ export default function App() {
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar 
         todos={todos}
+        projectTitle={projectTitle}
+        onUpdateProjectTitle={setProjectTitle}
         onAddTodo={handleAddTodo}
         onToggleTodo={handleToggleTodo}
         onDeleteTodo={handleDeleteTodo}
+        onRenameTodo={handleRenameTodo}
         onCardClick={setSelectedCard}
       />
       

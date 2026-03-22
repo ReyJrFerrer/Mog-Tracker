@@ -96,8 +96,6 @@ export function CardModal({ card, onClose, onUpdate }: CardModalProps) {
         <div className="p-8 flex items-start justify-between">
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-3 text-[10px] font-black text-zinc-900 tracking-widest uppercase">
-              <span className="px-2 py-1 glass rounded-lg">{card.priority || 'NONE'}</span>
-              <span>•</span>
               <span>{card.timeOfDay || 'ANYTIME'}</span>
             </div>
             <h2 className="serif text-4xl font-bold text-black leading-tight">{card.title}</h2>

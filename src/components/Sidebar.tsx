@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
-import { Plus, Layout, ChevronRight, ChevronLeft, Circle, CheckCircle2, MoreHorizontal } from 'lucide-react';
+import { Plus, Layout, ChevronRight, ChevronLeft, Circle, CheckCircle2, Trash2, Edit2, Check } from 'lucide-react';
 import { Card, Priority } from '../types';
 import { cn } from '../lib/utils';
 
 interface SidebarProps {
   todos: Card[];
+  projectTitle: string;
+  onUpdateProjectTitle: (title: string) => void;
   onAddTodo: (title: string, priority: Priority) => void;
   onToggleTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
+  onRenameTodo: (id: string, title: string) => void;
   onCardClick?: (card: Card) => void;
 }
 
-export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardClick }: SidebarProps) {
+export function Sidebar({ todos, projectTitle, onUpdateProjectTitle, onAddTodo, onToggleTodo, onDeleteTodo, onRenameTodo, onCardClick }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState(projectTitle);
   const [newTodo, setNewTodo] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<Priority>('none');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [editingTodoTitle, setEditingTodoTitle] = useState('');
 
   const handleAdd = () => {
     if (newTodo.trim()) {
@@ -23,10 +30,29 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardCl
     }
   };
 
+  const handleTitleSave = () => {
+    if (editTitleValue.trim()) {
+      onUpdateProjectTitle(editTitleValue);
+    } else {
+      setEditTitleValue(projectTitle);
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleRenameTodo = (id: string) => {
+    if (editingTodoTitle.trim()) {
+      onRenameTodo(id, editingTodoTitle);
+    }
+    setEditingTodoId(null);
+  };
+
+  const startEditingTodo = (e: React.MouseEvent, todo: Card) => {
+    e.stopPropagation();
+    setEditingTodoId(todo.id);
+    setEditingTodoTitle(todo.title);
+  };
+
   const categories: { label: string; priority: Priority; color: string }[] = [
-    { label: 'HIGH', priority: 'high', color: 'bg-red-400' },
-    { label: 'MEDIUM', priority: 'medium', color: 'bg-orange-400' },
-    { label: 'LOW', priority: 'low', color: 'bg-blue-400' },
     { label: 'TO-DO', priority: 'none', color: 'bg-zinc-400' },
   ];
 
@@ -56,7 +82,27 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardCl
           <div className="w-10 h-10 liquid-glass rounded-2xl flex items-center justify-center text-black shadow-sm">
             <Layout size={22} />
           </div>
-          {isOpen && <h1 className="serif font-bold text-2xl tracking-tight text-black">Home</h1>}
+          {isOpen && (
+            <div className="flex-1 min-w-0">
+              {isEditingTitle ? (
+                <input
+                  autoFocus
+                  value={editTitleValue}
+                  onChange={(e) => setEditTitleValue(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+                  className="w-full bg-white/40 border border-white/40 rounded-xl px-2 py-1 text-xl font-bold serif outline-none focus:bg-white/60 transition-all text-black"
+                />
+              ) : (
+                <h1 
+                  onClick={() => setIsEditingTitle(true)}
+                  className="serif font-bold text-2xl tracking-tight text-black cursor-pointer hover:bg-white/20 px-2 py-1 rounded-xl transition-all truncate"
+                >
+                  {projectTitle}
+                </h1>
+              )}
+            </div>
+          )}
         </div>
 
         {isOpen && (
@@ -77,22 +123,6 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardCl
                 >
                   <Plus size={20} />
                 </button>
-              </div>
-              <div className="flex gap-1.5">
-                {categories.map(cat => (
-                  <button
-                    key={cat.priority}
-                    onClick={() => setSelectedPriority(cat.priority)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all border",
-                      selectedPriority === cat.priority 
-                        ? "bg-zinc-800 text-white border-zinc-800" 
-                        : "bg-white/30 text-zinc-800 border-white/40 hover:bg-white/50"
-                    )}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -123,20 +153,48 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardCl
                           className="group flex items-center justify-between p-3 bg-white/30 hover:bg-white/50 rounded-2xl border border-white/20 transition-all cursor-pointer"
                           onClick={() => onCardClick?.(todo)}
                         >
-                          <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="flex items-center gap-3 overflow-hidden flex-1">
                             <Circle 
                               size={18} 
                               className="shrink-0 text-zinc-600 hover:text-black transition-colors" 
                               onClick={(e) => { e.stopPropagation(); onToggleTodo(todo.id); }}
                             />
-                            <span className="text-sm text-zinc-900 truncate">{todo.title}</span>
+                            {editingTodoId === todo.id ? (
+                              <div className="flex items-center gap-2 flex-1">
+                                <input
+                                  autoFocus
+                                  value={editingTodoTitle}
+                                  onChange={(e) => setEditingTodoTitle(e.target.value)}
+                                  onBlur={() => handleRenameTodo(todo.id)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleRenameTodo(todo.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 bg-white/60 border border-white/40 rounded-lg px-2 py-0.5 text-sm outline-none text-black"
+                                />
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleRenameTodo(todo.id); }}
+                                  className="text-emerald-600 hover:text-emerald-700"
+                                >
+                                  <Check size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-zinc-900 truncate">{todo.title}</span>
+                            )}
                           </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-red-400 transition-all"
-                          >
-                            <MoreHorizontal size={16} />
-                          </button>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button 
+                              onClick={(e) => startEditingTodo(e, todo)}
+                              className="p-1 text-zinc-600 hover:text-black hover:bg-white/40 rounded-lg transition-all"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }}
+                              className="p-1 text-zinc-600 hover:text-red-400 hover:bg-white/40 rounded-lg transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                       {catTodos.length === 0 && (
@@ -162,10 +220,11 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardCl
                     {doneTodos.map(todo => (
                       <div 
                         key={todo.id} 
-                        className="flex items-center gap-3 p-3 bg-white/10 rounded-2xl border border-white/10 opacity-60"
+                        className="group flex items-center gap-3 p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 opacity-60 transition-all cursor-pointer"
+                        onClick={() => onToggleTodo(todo.id)}
                       >
                         <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
-                        <span className="text-sm text-zinc-700 line-through truncate">{todo.title}</span>
+                        <span className="text-sm text-zinc-700 line-through truncate flex-1">{todo.title}</span>
                       </div>
                     ))}
                   </div>
