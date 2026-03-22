@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, Layout, ChevronRight, ChevronLeft, Circle, CheckCircle2, Trash2, Edit2, Check } from 'lucide-react';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { PlannerCard } from './PlannerCard';
 import { Card, Priority } from '../types';
 import { cn } from '../lib/utils';
 
@@ -22,6 +25,10 @@ export function Sidebar({ todos, projectTitle, onUpdateProjectTitle, onAddTodo, 
   const [selectedPriority, setSelectedPriority] = useState<Priority>('none');
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
   const [editingTodoTitle, setEditingTodoTitle] = useState('');
+
+  const { setNodeRef } = useDroppable({
+    id: 'sidebar',
+  });
 
   const handleAdd = () => {
     if (newTodo.trim()) {
@@ -77,7 +84,7 @@ export function Sidebar({ todos, projectTitle, onUpdateProjectTitle, onAddTodo, 
         {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
       </button>
 
-      <div className="relative z-10 flex flex-col h-full">
+      <div ref={setNodeRef} className="relative z-10 flex flex-col h-full">
         <div className="p-8 flex items-center gap-4">
           <div className="w-10 h-10 liquid-glass rounded-2xl flex items-center justify-center text-black shadow-sm">
             <Layout size={22} />
@@ -147,56 +154,18 @@ export function Sidebar({ todos, projectTitle, onUpdateProjectTitle, onAddTodo, 
                     </div>
                     
                     <div className="space-y-2">
-                      {catTodos.map(todo => (
-                        <div 
-                          key={todo.id} 
-                          className="group flex items-center justify-between p-3 bg-white/30 hover:bg-white/50 rounded-2xl border border-white/20 transition-all cursor-pointer"
-                          onClick={() => onCardClick?.(todo)}
-                        >
-                          <div className="flex items-center gap-3 overflow-hidden flex-1">
-                            <Circle 
-                              size={18} 
-                              className="shrink-0 text-zinc-600 hover:text-black transition-colors" 
-                              onClick={(e) => { e.stopPropagation(); onToggleTodo(todo.id); }}
-                            />
-                            {editingTodoId === todo.id ? (
-                              <div className="flex items-center gap-2 flex-1">
-                                <input
-                                  autoFocus
-                                  value={editingTodoTitle}
-                                  onChange={(e) => setEditingTodoTitle(e.target.value)}
-                                  onBlur={() => handleRenameTodo(todo.id)}
-                                  onKeyDown={(e) => e.key === 'Enter' && handleRenameTodo(todo.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="flex-1 bg-white/60 border border-white/40 rounded-lg px-2 py-0.5 text-sm outline-none text-black"
-                                />
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); handleRenameTodo(todo.id); }}
-                                  className="text-emerald-600 hover:text-emerald-700"
-                                >
-                                  <Check size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-sm text-zinc-900 truncate">{todo.title}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button 
-                              onClick={(e) => startEditingTodo(e, todo)}
-                              className="p-1 text-zinc-600 hover:text-black hover:bg-white/40 rounded-lg transition-all"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }}
-                              className="p-1 text-zinc-600 hover:text-red-400 hover:bg-white/40 rounded-lg transition-all"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                      <SortableContext items={catTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                        {catTodos.map(todo => (
+                          <PlannerCard
+                            key={todo.id}
+                            item={todo}
+                            onToggleComplete={onToggleTodo}
+                            onDelete={onDeleteTodo}
+                            onRename={onRenameTodo}
+                            onClick={onCardClick}
+                          />
+                        ))}
+                      </SortableContext>
                       {catTodos.length === 0 && (
                         <div className="p-4 border border-dashed border-white/40 rounded-2xl text-center">
                           <span className="text-[10px] text-zinc-700 font-medium">Drop to add</span>

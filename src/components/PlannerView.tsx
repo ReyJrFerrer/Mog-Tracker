@@ -53,91 +53,22 @@ const initialCards: CardType[] = [
 ];
 
 export function PlannerView({ 
-  todos,
-  onAddTodoToPlanner
+  cards,
+  onUpdateCards,
+  onCardClick
 }: { 
-  todos: CardType[],
-  onAddTodoToPlanner?: (todo: CardType, date: string, timeOfDay: TimeOfDay) => void
+  cards: CardType[],
+  onUpdateCards: React.Dispatch<React.SetStateAction<CardType[]>>,
+  onCardClick: (card: CardType) => void
 }) {
   const [columns, setColumns] = useState<ColumnType[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY + '_cols');
     return saved ? JSON.parse(saved) : getInitialColumns();
   });
 
-  const [cards, setCards] = useState<CardType[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY + '_cards');
-    return saved ? JSON.parse(saved) : initialCards;
-  });
-
-  const [activeCard, setActiveCard] = useState<CardType | null>(null);
-  const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
-
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY + '_cols', JSON.stringify(columns));
-    localStorage.setItem(STORAGE_KEY + '_cards', JSON.stringify(cards));
-  }, [columns, cards]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const onDragStart = (event: DragStartEvent) => {
-    if (event.active.data.current?.type === 'Card') {
-      setActiveCard(event.active.data.current.card);
-    }
-  };
-
-  const onDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    const isActiveACard = active.data.current?.type === 'Card';
-    const isOverACard = over.data.current?.type === 'Card';
-
-    if (!isActiveACard) return;
-
-    // Dropping a Card over another Card
-    if (isActiveACard && isOverACard) {
-      setCards((cards) => {
-        const activeIndex = cards.findIndex((t) => t.id === activeId);
-        const overIndex = cards.findIndex((t) => t.id === overId);
-
-        if (cards[activeIndex].date !== cards[overIndex].date || cards[activeIndex].timeOfDay !== cards[overIndex].timeOfDay) {
-          cards[activeIndex].date = cards[overIndex].date;
-          cards[activeIndex].timeOfDay = cards[overIndex].timeOfDay;
-          return arrayMove(cards, activeIndex, overIndex - 1);
-        }
-
-        return arrayMove(cards, activeIndex, overIndex);
-      });
-    }
-
-    // Dropping a Card over a Column
-    const isOverAColumn = over.data.current?.type === 'Column';
-    if (isActiveACard && isOverAColumn) {
-      setCards((cards) => {
-        const activeIndex = cards.findIndex((t) => t.id === activeId);
-        cards[activeIndex].date = overId as string;
-        return arrayMove(cards, activeIndex, activeIndex);
-      });
-    }
-  };
-
-  const onDragEnd = (event: DragEndEvent) => {
-    setActiveCard(null);
-  };
+  }, [columns]);
 
   const addCard = (date: string, timeOfDay: TimeOfDay) => {
     const newCard: CardType = {
@@ -148,108 +79,63 @@ export function PlannerView({
       type: 'todo',
       createdAt: Date.now(),
     };
-    setCards((prev) => [...prev, newCard]);
+    onUpdateCards((prev) => [...prev, newCard]);
   };
 
   const deleteCard = (id: string) => {
-    setCards((prev) => prev.filter((c) => c.id !== id));
+    onUpdateCards((prev) => prev.filter((c) => c.id !== id));
   };
 
   const renameCard = (id: string, newTitle: string) => {
-    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c)));
+    onUpdateCards((prev) => prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c)));
   };
 
   const toggleComplete = (id: string) => {
-    setCards((prev) =>
+    onUpdateCards((prev) =>
       prev.map((c) => (c.id === id ? { ...c, completed: !c.completed } : c))
     );
-  };
-
-  const onCardUpdate = (updatedCard: CardType) => {
-    setCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
-    setSelectedCard(updatedCard);
-  };
-
-  const dropAnimation: DropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({
-      styles: {
-        active: {
-          opacity: '0.5',
-        },
-      },
-    }),
   };
 
   const currentMonth = new Date(columns[0].date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="p-8 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <CalendarIcon size={18} />
-              <button className="p-1 hover:bg-white/40 rounded-lg transition-all"><ChevronLeft size={16} /></button>
-              <button className="p-1 hover:bg-white/40 rounded-lg transition-all"><ChevronRight size={16} /></button>
-            </div>
-            <h2 className="serif text-3xl font-bold text-zinc-800">{currentMonth}</h2>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="p-8 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <CalendarIcon size={18} />
+            <button className="p-1 hover:bg-white/40 rounded-lg transition-all"><ChevronLeft size={16} /></button>
+            <button className="p-1 hover:bg-white/40 rounded-lg transition-all"><ChevronRight size={16} /></button>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="glass px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-zinc-500">
-              <span>3-days</span>
-              <ChevronRight size={14} className="rotate-90" />
-            </div>
-          </div>
+          <h2 className="serif text-3xl font-bold text-zinc-800">{currentMonth}</h2>
         </div>
-
-        {/* Board */}
-        <div className="flex-1 flex overflow-x-auto overflow-y-hidden px-8 gap-12 pb-10">
-          <SortableContext items={columns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
-            {columns.map((col) => (
-              <PlannerDay
-                key={col.id}
-                item={col}
-                cards={cards.filter((c) => c.date === col.date)}
-                onAddCard={addCard}
-                onToggleComplete={toggleComplete}
-                onDeleteCard={deleteCard}
-                onRenameCard={renameCard}
-                onCardClick={setSelectedCard}
-              />
-            ))}
-          </SortableContext>
+        
+        <div className="flex items-center gap-4">
+          <div className="glass px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold text-zinc-500">
+            <span>3-days</span>
+            <ChevronRight size={14} className="rotate-90" />
+          </div>
         </div>
       </div>
 
-      {selectedCard && (
-        <CardModal 
-          card={selectedCard}
-          onClose={() => setSelectedCard(null)}
-          onUpdate={onCardUpdate}
-        />
-      )}
-
-      {createPortal(
-        <DragOverlay dropAnimation={dropAnimation}>
-          {activeCard ? (
-            <PlannerCard
-              item={activeCard}
-              onToggleComplete={() => {}}
-              onDelete={() => {}}
-              onRename={() => {}}
+      {/* Board */}
+      <div className="flex-1 flex overflow-x-auto overflow-y-hidden px-8 gap-12 pb-10">
+        <SortableContext items={columns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+          {columns.map((col) => (
+            <PlannerDay
+              key={col.id}
+              item={col}
+              cards={cards.filter((c) => c.date === col.date)}
+              onAddCard={addCard}
+              onToggleComplete={toggleComplete}
+              onDeleteCard={deleteCard}
+              onRenameCard={renameCard}
+              onCardClick={onCardClick}
             />
-          ) : null}
-        </DragOverlay>,
-        document.body
-      )}
-    </DndContext>
+          ))}
+        </SortableContext>
+      </div>
+    </div>
   );
 }
