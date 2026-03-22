@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PlannerView } from './components/PlannerView';
+import { CardModal } from './components/CardModal';
 import { Card, Priority } from './types';
 
 const STORAGE_KEY = 'flexboard_app_data';
@@ -15,6 +16,8 @@ export default function App() {
       { id: 't4', title: 'Plan camping trip', type: 'todo', priority: 'low', createdAt: Date.now() },
     ];
   });
+
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY + '_todos', JSON.stringify(todos));
@@ -39,6 +42,11 @@ export default function App() {
     setTodos(prev => prev.filter(t => t.id !== id));
   };
 
+  const handleCardUpdate = (updatedCard: Card) => {
+    setTodos(prev => prev.map(t => t.id === updatedCard.id ? updatedCard : t));
+    setSelectedCard(updatedCard);
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar 
@@ -46,6 +54,7 @@ export default function App() {
         onAddTodo={handleAddTodo}
         onToggleTodo={handleToggleTodo}
         onDeleteTodo={handleDeleteTodo}
+        onCardClick={setSelectedCard}
       />
       
       <main className="flex-1 h-full overflow-hidden">
@@ -53,6 +62,14 @@ export default function App() {
           todos={todos}
         />
       </main>
+
+      {selectedCard && (
+        <CardModal 
+          card={selectedCard}
+          onClose={() => setSelectedCard(null)}
+          onUpdate={handleCardUpdate}
+        />
+      )}
     </div>
   );
 }

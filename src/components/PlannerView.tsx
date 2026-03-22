@@ -23,6 +23,7 @@ import { createPortal } from 'react-dom';
 import { Column as ColumnType, Card as CardType, TimeOfDay } from '../types';
 import { PlannerDay } from './PlannerDay';
 import { PlannerCard } from './PlannerCard';
+import { CardModal } from './CardModal';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
 const STORAGE_KEY = 'flexboard_planner_data';
@@ -69,6 +70,7 @@ export function PlannerView({
   });
 
   const [activeCard, setActiveCard] = useState<CardType | null>(null);
+  const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY + '_cols', JSON.stringify(columns));
@@ -163,6 +165,11 @@ export function PlannerView({
     );
   };
 
+  const onCardUpdate = (updatedCard: CardType) => {
+    setCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
+    setSelectedCard(updatedCard);
+  };
+
   const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
@@ -215,11 +222,20 @@ export function PlannerView({
                 onToggleComplete={toggleComplete}
                 onDeleteCard={deleteCard}
                 onRenameCard={renameCard}
+                onCardClick={setSelectedCard}
               />
             ))}
           </SortableContext>
         </div>
       </div>
+
+      {selectedCard && (
+        <CardModal 
+          card={selectedCard}
+          onClose={() => setSelectedCard(null)}
+          onUpdate={onCardUpdate}
+        />
+      )}
 
       {createPortal(
         <DragOverlay dropAnimation={dropAnimation}>

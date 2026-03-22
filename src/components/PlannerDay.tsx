@@ -14,6 +14,7 @@ interface PlannerDayProps {
   onToggleComplete: (id: string) => void;
   onDeleteCard: (id: string) => void;
   onRenameCard: (id: string, newTitle: string) => void;
+  onCardClick?: (card: CardType) => void;
 }
 
 export function PlannerDay({
@@ -23,6 +24,7 @@ export function PlannerDay({
   onToggleComplete,
   onDeleteCard,
   onRenameCard,
+  onCardClick,
 }: PlannerDayProps) {
   const cardIds = useMemo(() => cards.map((c) => c.id), [cards]);
 
@@ -89,6 +91,7 @@ export function PlannerDay({
                       onToggleComplete={onToggleComplete}
                       onDelete={onDeleteCard}
                       onRename={onRenameCard}
+                      onClick={onCardClick}
                     />
                   ))}
                 </SortableContext>

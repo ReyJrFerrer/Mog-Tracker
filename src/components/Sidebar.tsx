@@ -8,9 +8,10 @@ interface SidebarProps {
   onAddTodo: (title: string, priority: Priority) => void;
   onToggleTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
+  onCardClick?: (card: Card) => void;
 }
 
-export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: SidebarProps) {
+export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo, onCardClick }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [newTodo, setNewTodo] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<Priority>('none');
@@ -52,10 +53,10 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
 
       <div className="relative z-10 flex flex-col h-full">
         <div className="p-8 flex items-center gap-4">
-          <div className="w-10 h-10 liquid-glass rounded-2xl flex items-center justify-center text-zinc-800 shadow-sm">
+          <div className="w-10 h-10 liquid-glass rounded-2xl flex items-center justify-center text-black shadow-sm">
             <Layout size={22} />
           </div>
-          {isOpen && <h1 className="serif font-bold text-2xl tracking-tight text-zinc-800">Home</h1>}
+          {isOpen && <h1 className="serif font-bold text-2xl tracking-tight text-black">Home</h1>}
         </div>
 
         {isOpen && (
@@ -67,7 +68,7 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                   value={newTodo}
                   onChange={(e) => setNewTodo(e.target.value)}
                   placeholder="Add to list..."
-                  className="flex-1 bg-white/40 border border-white/40 rounded-2xl px-4 py-2.5 text-sm outline-none focus:bg-white/60 transition-all placeholder:text-zinc-400"
+                  className="flex-1 bg-white/40 border border-white/40 rounded-2xl px-4 py-2.5 text-sm outline-none focus:bg-white/60 transition-all placeholder:text-zinc-600"
                   onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                 />
                 <button
@@ -86,7 +87,7 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                       "px-2.5 py-1 rounded-full text-[9px] font-bold tracking-wider transition-all border",
                       selectedPriority === cat.priority 
                         ? "bg-zinc-800 text-white border-zinc-800" 
-                        : "bg-white/30 text-zinc-500 border-white/40 hover:bg-white/50"
+                        : "bg-white/30 text-zinc-800 border-white/40 hover:bg-white/50"
                     )}
                   >
                     {cat.label}
@@ -106,11 +107,11 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                     <div className="flex items-center justify-between group">
                       <div className="flex items-center gap-2">
                         <div className={cn("w-1.5 h-1.5 rounded-full", cat.color)} />
-                        <span className="text-[10px] font-black text-zinc-400 tracking-widest uppercase">
+                        <span className="text-[10px] font-black text-zinc-900 tracking-widest uppercase">
                           {cat.label} ({catTodos.length})
                         </span>
                       </div>
-                      <button className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                      <button className="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-black transition-all">
                         <Plus size={14} />
                       </button>
                     </div>
@@ -120,15 +121,19 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                         <div 
                           key={todo.id} 
                           className="group flex items-center justify-between p-3 bg-white/30 hover:bg-white/50 rounded-2xl border border-white/20 transition-all cursor-pointer"
-                          onClick={() => onToggleTodo(todo.id)}
+                          onClick={() => onCardClick?.(todo)}
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <Circle size={18} className="shrink-0 text-zinc-300" />
-                            <span className="text-sm text-zinc-700 truncate">{todo.title}</span>
+                            <Circle 
+                              size={18} 
+                              className="shrink-0 text-zinc-600 hover:text-black transition-colors" 
+                              onClick={(e) => { e.stopPropagation(); onToggleTodo(todo.id); }}
+                            />
+                            <span className="text-sm text-zinc-900 truncate">{todo.title}</span>
                           </div>
                           <button 
                             onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 hover:text-red-400 transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-red-400 transition-all"
                           >
                             <MoreHorizontal size={16} />
                           </button>
@@ -136,7 +141,7 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                       ))}
                       {catTodos.length === 0 && (
                         <div className="p-4 border border-dashed border-white/40 rounded-2xl text-center">
-                          <span className="text-[10px] text-zinc-400 font-medium">Drop to add</span>
+                          <span className="text-[10px] text-zinc-700 font-medium">Drop to add</span>
                         </div>
                       )}
                     </div>
@@ -149,7 +154,7 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[10px] font-black text-zinc-400 tracking-widest uppercase">
+                    <span className="text-[10px] font-black text-zinc-900 tracking-widest uppercase">
                       DONE ({doneTodos.length})
                     </span>
                   </div>
@@ -160,7 +165,7 @@ export function Sidebar({ todos, onAddTodo, onToggleTodo, onDeleteTodo }: Sideba
                         className="flex items-center gap-3 p-3 bg-white/10 rounded-2xl border border-white/10 opacity-60"
                       >
                         <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
-                        <span className="text-sm text-zinc-500 line-through truncate">{todo.title}</span>
+                        <span className="text-sm text-zinc-700 line-through truncate">{todo.title}</span>
                       </div>
                     ))}
                   </div>
